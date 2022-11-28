@@ -94,7 +94,7 @@ class AddLinkModal extends Modal {
       return;
     }
 
-    const markdownLink = `[${linkText}][${prettyUrl(linkUrl)}]`;
+    const markdownLink = `[${linkText}](${prettyUrl(linkUrl)})`;
     editor.replaceSelection(markdownLink);
   }
 }
