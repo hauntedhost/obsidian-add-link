@@ -2,6 +2,23 @@ import { App, Editor, MarkdownView, Modal, Plugin, Setting } from 'obsidian';
 
 const isBlank = (str: string): boolean => !/\S+/.test(str);
 
+const prettyUrl = (urlText: string): string => {
+  try {
+    const url = new URL(urlText);
+
+    // remove twitter tracking links
+    if (url.hostname === 'twitter.com') {
+      url.search = '';
+    }
+
+    // strip trailing slash
+    return url.toString().replace(/\/$/, '');
+  } catch (TypeError) {
+    console.warn(`Could not parse url:`, urlText);
+    return urlText;
+  }
+};
+
 // TODO: rename shouldInsert to something like insertRequested
 // create an actual shouldInsert() function that does all validation checks
 class AddLinkModal extends Modal {
@@ -25,14 +42,12 @@ class AddLinkModal extends Modal {
 
     new Setting(this.contentEl).addText((text) =>
       text.setPlaceholder('Text').onChange((value) => {
-        console.log('linkText', { value, 'this.linkText': this.linkText });
         this.linkText = value;
       })
     );
 
     new Setting(this.contentEl).addText((text) =>
       text.setPlaceholder('URL').onChange((value) => {
-        console.log('linkUrl', { value, 'this.linkUrl': this.linkUrl });
         this.linkUrl = value;
       })
     );
@@ -79,20 +94,8 @@ class AddLinkModal extends Modal {
       return;
     }
 
-    try {
-      const url = new URL(linkUrl);
-
-      // remove twitter tracking links
-      if (url.hostname === 'twitter.com') {
-        url.search = '';
-      }
-
-      const markdownLink = `[${linkText}][${url.toString()}]`;
-
-      editor.replaceSelection(markdownLink);
-    } catch (TypeError) {
-      console.error(`Invalid url:`, linkUrl);
-    }
+    const markdownLink = `[${linkText}][${prettyUrl(linkUrl)}]`;
+    editor.replaceSelection(markdownLink);
   }
 }
 
