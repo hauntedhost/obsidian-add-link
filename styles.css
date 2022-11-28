@@ -9,9 +9,12 @@
   width: 100%;
 }
 
-.add-link.modal .setting-item-control button,
 .add-link.modal .setting-item-control input {
-  padding: 1.35em;
+  padding: 1em;
+}
+
+.add-link.modal .setting-item-control button {
+  padding: 1.25em;
 }
 
 .add-link.modal .setting-item-control {
