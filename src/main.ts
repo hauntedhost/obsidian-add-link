@@ -1,39 +1,20 @@
 import { App, Editor, MarkdownView, Modal, Plugin, Setting } from 'obsidian';
 
-export default class AddLink extends Plugin {
-  async onload() {
-    this.addCommand({
-      id: 'add-external-markdown-link',
-      name: 'Add external link',
-      icon: 'external-link',
-      editorCallback: (editor: Editor, view: MarkdownView) => {
-        new AddLinkModal(this.app, editor).open();
-      },
-    });
-  }
+const isBlank = (str: string): boolean => !/\S+/.test(str);
 
-  onunload() {}
-}
-
+// TODO: rename shouldInsert to something like insertRequested
+// create an actual shouldInsert() function that does all validation checks
 class AddLinkModal extends Modal {
   editor: Editor;
   linkText?: string;
   linkUrl?: string;
   shouldInsert: boolean;
+  keydownHandler?: (e: KeyboardEvent) => void;
 
   constructor(app: App, editor: Editor) {
     super(app);
     this.editor = editor;
     this.shouldInsert = false;
-  }
-
-  keydownHandler(e: KeyboardEvent) {
-    e.preventDefault();
-
-    if (e.key === 'Enter') {
-      this.shouldInsert = true;
-      this.close();
-    }
   }
 
   onOpen() {
@@ -42,14 +23,16 @@ class AddLinkModal extends Modal {
     this.modalEl.classList.add('add-link');
     this.titleEl.setText('Add Link');
 
-    new Setting(this.contentEl).setName('Text').addText((text) =>
-      text.setPlaceholder('Link text').onChange((value) => {
+    new Setting(this.contentEl).addText((text) =>
+      text.setPlaceholder('Text').onChange((value) => {
+        console.log('linkText', { value, 'this.linkText': this.linkText });
         this.linkText = value;
       })
     );
 
-    new Setting(this.contentEl).setName('URL').addText((text) =>
+    new Setting(this.contentEl).addText((text) =>
       text.setPlaceholder('URL').onChange((value) => {
+        console.log('linkUrl', { value, 'this.linkUrl': this.linkUrl });
         this.linkUrl = value;
       })
     );
@@ -64,6 +47,14 @@ class AddLinkModal extends Modal {
         })
     );
 
+    this.keydownHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.shouldInsert = true;
+        this.close();
+      }
+    };
+
     window.addEventListener('keydown', this.keydownHandler);
   }
 
@@ -77,14 +68,45 @@ class AddLinkModal extends Modal {
       shouldInsert,
     } = this;
 
-    window.removeEventListener('keydown', keydownHandler);
+    keydownHandler && window.removeEventListener('keydown', keydownHandler);
+    contentEl.empty();
 
-    if (shouldInsert && linkText && linkUrl) {
-      // TODO: add http if missing
-      // TODO: cleanup twitter urls
-      editor.replaceSelection(`[${linkText}](${linkUrl})`);
+    if (!shouldInsert) {
+      return;
     }
 
-    contentEl.empty();
+    if (!linkText || isBlank(linkText) || !linkUrl || isBlank(linkUrl)) {
+      return;
+    }
+
+    try {
+      const url = new URL(linkUrl);
+
+      // remove twitter tracking links
+      if (url.hostname === 'twitter.com') {
+        url.search = '';
+      }
+
+      const markdownLink = `[${linkText}][${url.toString()}]`;
+
+      editor.replaceSelection(markdownLink);
+    } catch (TypeError) {
+      console.error(`Invalid url:`, linkUrl);
+    }
   }
+}
+
+export default class AddLink extends Plugin {
+  async onload() {
+    this.addCommand({
+      id: 'add-external-markdown-link',
+      name: 'Add external link',
+      icon: 'external-link',
+      editorCallback: (editor: Editor, view: MarkdownView) => {
+        new AddLinkModal(this.app, editor).open();
+      },
+    });
+  }
+
+  onunload() {}
 }

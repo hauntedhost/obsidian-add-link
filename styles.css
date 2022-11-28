@@ -1,0 +1,23 @@
+.add-link.modal .setting-item {
+  border-top: none;
+  padding: 0;
+  padding-bottom: 10px;
+}
+
+.add-link.modal .setting-item-control,
+.add-link.modal .setting-item-control input {
+  width: 100%;
+}
+
+.add-link.modal .setting-item-control button,
+.add-link.modal .setting-item-control input {
+  padding: 1.35em;
+}
+
+.add-link.modal .setting-item-control {
+  justify-content: center;
+}
+
+.add-link.modal .setting-item-control button:hover {
+  cursor: pointer;
+}
